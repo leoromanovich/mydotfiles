@@ -40,76 +40,78 @@ packer.init {
 
 -- Install your plugins here
 return packer.startup(function(use)
-  -- My plugins here
-  use "wbthomason/packer.nvim"
-  use "nvim-lua/plenary.nvim"
-  use "windwp/nvim-autopairs"
-  use "kyazdani42/nvim-web-devicons"
-  use 'lewis6991/impatient.nvim'  -- speedup lua modules loading
-  use "ahmedkhalf/project.nvim"
-  use "akinsho/toggleterm.nvim" -- nvim terminal extention 
-  use "akinsho/bufferline.nvim" -- Add tabs like in ide
-  use "lukas-reineke/indent-blankline.nvim"
-
-  use {
+    -- My plugins here
+    use "wbthomason/packer.nvim"
+    use "nvim-lua/plenary.nvim"
+    use "windwp/nvim-autopairs"
+    use "kyazdani42/nvim-web-devicons"
+    use 'lewis6991/impatient.nvim'  -- speedup lua modules loading
+    use "ahmedkhalf/project.nvim"
+    use "akinsho/toggleterm.nvim" -- nvim terminal extention 
+    use "akinsho/bufferline.nvim" -- Add tabs like in ide
+    use "lukas-reineke/indent-blankline.nvim"
+    use "kyazdani42/nvim-tree.lua"
+    use {
     'goolord/alpha-nvim',
     requires = { 'kyazdani42/nvim-web-devicons' },
     config = function ()
         require'alpha'.setup(require'alpha.themes.startify'.config)
     end
-  }
-  use {
+    }
+    use {
     'numToStr/Comment.nvim',
     config = function()
         require('Comment').setup()
     end
-  }
-  
-  -- CMP
-  use "hrsh7th/nvim-cmp" -- The completion plugin
-  use "hrsh7th/cmp-buffer" -- buffer completions
-  use "hrsh7th/cmp-path" -- path completions 
-  use "saadparwaiz1/cmp_luasnip" -- snippet completions 
-  use "hrsh7th/cmp-nvim-lsp" -- LSP completion 
-  use "hrsh7th/cmp-nvim-lua"
+    }
 
+    -- CMP
+    use "hrsh7th/nvim-cmp" -- The completion plugin
+    use "hrsh7th/cmp-buffer" -- buffer completions
+    use "hrsh7th/cmp-path" -- path completions 
+    use "saadparwaiz1/cmp_luasnip" -- snippet completions 
+    use "hrsh7th/cmp-nvim-lsp" -- LSP completion 
+    use "hrsh7th/cmp-nvim-lua"
 
-  
-  -- Colorschemes
-  use "folke/tokyonight.nvim"
-  use 'bluz71/vim-nightfly-guicolors'
-  use 'marko-cerovac/material.nvim'
+    -- Folding package (ufo.lua)
+    use {'kevinhwang91/nvim-ufo', requires = 'kevinhwang91/promise-async'}
 
-
-
-  -- snippets
-  use "L3MON4D3/LuaSnip"
-
-  -- LSP
-  use "neovim/nvim-lspconfig" -- enable LSP
-  use "williamboman/nvim-lsp-installer"  -- simple to use language server installer
-  use "jose-elias-alvarez/null-ls.nvim" -- for formatters and linters
-  use "RRethy/vim-illuminate" -- highlight same usages
+    -- Colorschemes
+    use "folke/tokyonight.nvim"
+    use 'bluz71/vim-nightfly-guicolors'
+    use 'marko-cerovac/material.nvim'
 
 
 
+    -- snippets
+    use "L3MON4D3/LuaSnip"
 
-  -- Telescope
-  use "nvim-telescope/telescope.nvim"
-
-
-  -- Treesitter
-  use "nvim-treesitter/nvim-treesitter"
-
-  -- DAP (debugger)
-  use "mfussenegger/nvim-dap"
-  use "rcarriga/nvim-dap-ui"
-  use "ravenxrz/DAPInstall.nvim"
+    -- LSP
+    use "neovim/nvim-lspconfig" -- enable LSP
+    use "williamboman/nvim-lsp-installer"  -- simple to use language server installer
+    use "jose-elias-alvarez/null-ls.nvim" -- for formatters and linters
+    use "RRethy/vim-illuminate" -- highlight same usages
 
 
-  -- Automatically set up your configuration after cloning packer.nvim
-  -- Put this at the end after all plugins
-  if PACKER_BOOTSTRAP then
+
+
+    -- Telescope
+    use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
+    use "nvim-telescope/telescope.nvim"
+
+
+    -- Treesitter
+    use "nvim-treesitter/nvim-treesitter"
+
+    -- DAP (debugger)
+    use "mfussenegger/nvim-dap"
+    use "rcarriga/nvim-dap-ui"
+    use "ravenxrz/DAPInstall.nvim"
+
+
+    -- Automatically set up your configuration after cloning packer.nvim
+    -- Put this at the end after all plugins
+    if PACKER_BOOTSTRAP then
     require("packer").sync()
-  end
+    end
 end)

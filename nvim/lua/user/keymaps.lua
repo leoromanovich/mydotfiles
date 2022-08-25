@@ -36,7 +36,7 @@ keymap("n", "<S-h>", ":bprevious<CR>", opts)
 keymap("n", "<leader>h", "<cmd>nohlsearch<CR>", opts)
 
 -- Close buffers
-keymap("n", "<S-q>", "<cmd>Bdelete!<CR>", opts)
+keymap("n", "<S-q>", ":bdelete!<CR>", opts)
 
 -- Better paste
 keymap("v", "p", '"_dP', opts)
@@ -67,6 +67,13 @@ keymap("n", "<leader>gg", "<cmd>lua _LAZYGIT_TOGGLE()<CR>", opts)
 -- Comment
 keymap("n", "<leader>/", "<cmd>lua require('Comment.api').toggle_current_linewise()<CR>", opts)
 keymap("x", "<leader>/", '<ESC><CMD>lua require("Comment.api").toggle_linewise_op(vim.fn.visualmode())<CR>')
+
+-- Folding 
+-- Using ufo provider need remap `zR` and `zM`. If Neovim is 0.6.1, remap yourself
+--keymap('n', 'zR', require('ufo').openAllFolds)
+--keymap('n', 'zM', require('ufo').closeAllFolds)
+keymap('n', 'zr', ':foldopen<CR>')
+keymap('n', 'zm', ':foldclose<CR>')
 
 -- DAP
 keymap("n", "<leader>db", "<cmd>lua require'dap'.toggle_breakpoint()<cr>", opts)
