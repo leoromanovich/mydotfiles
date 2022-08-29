@@ -106,7 +106,6 @@ return packer.startup(function(use)
     -- DAP (debugger)
     use "mfussenegger/nvim-dap"
     use "rcarriga/nvim-dap-ui"
-    use "ravenxrz/DAPInstall.nvim"
 
 
     -- Automatically set up your configuration after cloning packer.nvim
