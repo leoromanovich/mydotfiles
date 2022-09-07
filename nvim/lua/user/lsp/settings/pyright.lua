@@ -2,7 +2,8 @@ return {
   settings = {
     python = {
       analysis = {
-        typeCheckingMode = "off",
+        typeCheckingMode = "basic",
+        venvPath = "/Users/verkhovtsev.l/.pyenv/versions/"
       },
     },
   },

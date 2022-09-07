@@ -7,3 +7,7 @@ git config --global alias.unstage 'reset HEAD --'
 git config --global alias.last 'log -1 HEAD'
 git config --global alias.lgraph 'log --pretty=format:"%h %an | %s" --graph'
 git config --global core.editor nvim
+git config --global core.excludesfile ~/.gitignore_global
+
+rm -f ~/.gitignore_global && touch ~/.gitignore_global
+cat "mygitignore" >> ~/.gitignore_global

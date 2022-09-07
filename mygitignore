@@ -1,0 +1,8 @@
+__MACOS__
+.python-version
+.DS_Store
+pyproject.json
+pyproject.toml
+.idea
+# sync file for nvim projects
+.sync.sh 
