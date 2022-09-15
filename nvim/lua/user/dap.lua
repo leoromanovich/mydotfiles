@@ -29,8 +29,8 @@ dap.configurations.python = {
       -- The code below looks for a `venv` or `.venv` folder in the current directly and uses the python within.
       -- You could adapt this - to for example use the `VIRTUAL_ENV` environment variable.
       local cwd = vim.fn.getcwd()
-      if vim.fn.executable("/Users/verkhovtsev.l/.pyenv/versions/ml/bin/python") == 1 then
-        return "/Users/verkhovtsev.l/.pyenv/versions/ml/bin/python"
+      if vim.fn.executable("/Users/verkhovtsev.l/.pyenv/versions/hands/bin/python") == 1 then
+        return "/Users/verkhovtsev.l/.pyenv/versions/hands/bin/python"
       else
         return '/usr/bin/python'
       end
