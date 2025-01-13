@@ -26,13 +26,42 @@ local plugins = {
     'nvim-telescope/telescope.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
+      local actions = require('telescope.actions')
+      local actions_layout = require('telescope.actions.layout')
       require('telescope').setup{
-        defaults = {
-          layout_strategy = 'horizontal',
-          layout_config = {
-            preview_width = 0.7,
+      defaults = {
+        layout_strategy = 'horizontal',
+        layout_config = {
+          preview_width = 0.7,
+        },
+        -- Настройка прокрутки превью
+        preview = {
+          -- Стратегия прокрутки: 'limit', 'cycle', 'unlimited'
+          scroll_strategy = 'limit',
+        },
+        mappings = {
+          i = {  -- Режим вставки
+            -- Прокрутка превью
+            ["<C-j>"] = actions.preview_scrolling_down,
+            ["<C-k>"] = actions.preview_scrolling_up,
+            -- Дополнительные полезные маппинги
+            ["<C-n>"] = actions.cycle_history_next,
+            ["<C-p>"] = actions.cycle_history_prev,
+            ["<C-c>"] = actions.close,
+          },
+          n = {  -- Нормальный режим
+            -- Прокрутка превью
+            ["<C-j>"] = actions.preview_scrolling_down,
+            ["<C-k>"] = actions.preview_scrolling_up,
+            -- Дополнительные полезные маппинги
+            ["j"] = actions.move_selection_next,
+            ["k"] = actions.move_selection_previous,
+            ["<C-c>"] = actions.close,
           },
         },
+        -- Добавляем опцию для отображения номеров строк
+        set_env = { ['LESS'] = '-N' },
+      },
       }
       local builtin = require('telescope.builtin')
       vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
@@ -529,3 +558,27 @@ vim.keymap.set('n', '<leader>bb', ':ls<CR>:b ', { noremap = true })
 -- Отключение netrw в начале файла
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+
+
+-- Функция для поиска корня репозитория
+local function get_git_root()
+  local git_dir = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+  if vim.v.shell_error == 0 then
+    return git_dir
+  end
+  return nil
+end
+
+-- Автокоманда для установки PYTHONPATH при открытии файла/папки
+vim.api.nvim_create_autocmd({"BufEnter", "DirChanged"}, {
+  callback = function()
+    local root = get_git_root()
+    if root then
+      vim.env.PYTHONPATH = root
+      print("PYTHONPATH set to: " .. root)
+    else
+      print("Could not determine git root.")
+    end
+  end,
+})
+
