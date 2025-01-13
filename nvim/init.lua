@@ -1,3 +1,4 @@
+
 -- Установка leader key
 vim.g.mapleader = " "
 
@@ -90,9 +91,11 @@ local plugins = {
     config = function()
       require('nightfox').setup()
       vim.cmd("colorscheme nightfox")
+      -- vim.cmd("colorscheme gruvbox")
     end
   },
 
+  { "ellisonleao/gruvbox.nvim", priority = 1000 , config = true},
   -- nvim-tree
   {
     'nvim-tree/nvim-tree.lua',
@@ -241,7 +244,7 @@ local plugins = {
         { name = 'buffer' },
         { name = 'path' },
         { name = 'luasnip' },
-        { name = 'vim_tabby' },
+        -- { name = 'vim_tabby' },
         -- Добавляем источник lazydev
         { name = 'lazydev', group_index = 0 },
       }),
@@ -478,24 +481,24 @@ local plugins = {
   },
 
 
-  -- TabbyML/vim-tabby
-  {
-    'TabbyML/vim-tabby',
-    config = function()
-      vim.g.tabby_agent_start_command = {"npx", "tabby-agent", "--stdio"}
-      vim.g.tabby_inline_completion_trigger = "manual"
-      vim.g.tabby_inline_completion_keybinding_accept = "<Tab>"
-      vim.g.tabby_inline_completion_keybinding_trigger_or_dismiss = "<C-\\>"
-      vim.g.tabby_inline_completion_insertion_leading_key = "<C-R><C-O>="
-    end
-  },
+  -- -- TabbyML/vim-tabby
+  -- {
+  --   'TabbyML/vim-tabby',
+  --   config = function()
+  --     vim.g.tabby_agent_start_command = {"npx", "tabby-agent", "--stdio"}
+  --     vim.g.tabby_inline_completion_trigger = "manual"
+  --     vim.g.tabby_inline_completion_keybinding_accept = "<Tab>"
+  --     vim.g.tabby_inline_completion_keybinding_trigger_or_dismiss = "<C-\\>"
+  --     vim.g.tabby_inline_completion_insertion_leading_key = "<C-R><C-O>="
+  --   end
+  -- },
 }
 
 -- Настройка плагинов с помощью lazy.nvim
 require("lazy").setup(plugins)
 
 -- Общие настройки
-vim.opt.termguicolors = true
+-- vim.opt.termguicolors = true
 vim.opt.scrolloff = 5
 vim.opt.mouse = "a"
 vim.opt.number = true
@@ -522,7 +525,7 @@ vim.opt.writebackup = false
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
-vim.opt.cursorline = true
+vim.opt.cursorline = false 
 vim.opt.number = true
 vim.opt.laststatus = 3
 vim.opt.showcmd = false
@@ -554,6 +557,8 @@ vim.keymap.set('n', '<Tab>', ':bnext<CR>', { noremap = true, silent = true })
 vim.keymap.set('n', '<S-Tab>', ':bprevious<CR>', { noremap = true, silent = true })
 vim.keymap.set('n', '<leader>bb', ':ls<CR>:b ', { noremap = true })
 
+-- vim.o.background = "dark" -- or "light" for light mode
+vim.cmd([[colorscheme vim]])
 
 -- Отключение netrw в начале файла
 vim.g.loaded_netrw = 1
