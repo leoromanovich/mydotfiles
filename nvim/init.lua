@@ -2,6 +2,7 @@
 -- Установка leader key
 vim.g.mapleader = " "
 
+-- vim.keymap.set("i", "<CapsLock>", "<Esc")
 
 vim.keymap.set("n", "<leader>d", function()
   vim.diagnostic.open_float(nil, { scope = "line" })
