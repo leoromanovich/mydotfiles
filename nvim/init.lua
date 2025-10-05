@@ -1,8 +1,15 @@
 
+-- Отключение netrw в начале файла
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Установка leader key
 vim.g.mapleader = " "
 
--- vim.keymap.set("i", "<CapsLock>", "<Esc")
+-- CUDA: filetype mapping
+vim.filetype.add({
+  extension = { cu = "cuda", cuh = "cuda" },
+})
 
 vim.keymap.set("n", "<leader>d", function()
   vim.diagnostic.open_float(nil, { scope = "line" })
@@ -20,50 +27,19 @@ vim.opt.rtp:prepend(lazypath)
 
 -- Определение списка плагинов
 local plugins = {
-  -- Plenary
-  { 'nvim-lua/plenary.nvim' },
 
   -- Telescope
   {
     'nvim-telescope/telescope.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
-      local actions = require('telescope.actions')
-      local actions_layout = require('telescope.actions.layout')
       require('telescope').setup{
-      defaults = {
-        layout_strategy = 'horizontal',
-        layout_config = {
-          preview_width = 0.7,
-        },
-        -- Настройка прокрутки превью
-        preview = {
-          -- Стратегия прокрутки: 'limit', 'cycle', 'unlimited'
-          scroll_strategy = 'limit',
-        },
-        mappings = {
-          i = {  -- Режим вставки
-            -- Прокрутка превью
-            ["<C-j>"] = actions.preview_scrolling_down,
-            ["<C-k>"] = actions.preview_scrolling_up,
-            -- Дополнительные полезные маппинги
-            ["<C-n>"] = actions.cycle_history_next,
-            ["<C-p>"] = actions.cycle_history_prev,
-            ["<C-c>"] = actions.close,
-          },
-          n = {  -- Нормальный режим
-            -- Прокрутка превью
-            ["<C-j>"] = actions.preview_scrolling_down,
-            ["<C-k>"] = actions.preview_scrolling_up,
-            -- Дополнительные полезные маппинги
-            ["j"] = actions.move_selection_next,
-            ["k"] = actions.move_selection_previous,
-            ["<C-c>"] = actions.close,
+        defaults = {
+          layout_strategy = 'horizontal',
+          layout_config = {
+            preview_width = 0.7,
           },
         },
-        -- Добавляем опцию для отображения номеров строк
-        set_env = { ['LESS'] = '-N' },
-      },
       }
       local builtin = require('telescope.builtin')
       vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
@@ -86,15 +62,6 @@ local plugins = {
   -- nvim-web-devicons
   { 'nvim-tree/nvim-web-devicons' },
 
-  -- Nightfox тема
-  {
-    'EdenEast/nightfox.nvim',
-    config = function()
-      require('nightfox').setup()
-      vim.cmd("colorscheme nightfox")
-      -- vim.cmd("colorscheme gruvbox")
-    end
-  },
 
   { "ellisonleao/gruvbox.nvim", priority = 1000 , config = true},
   -- nvim-tree
@@ -124,8 +91,18 @@ local plugins = {
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     config = function()
-      require'nvim-treesitter.configs'.setup {
-        ensure_installed = { "c", "cpp", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+    -- CUDA: внешний парсер tree-sitter
+    local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
+    parser_config.cuda = {
+      install_info = {
+        url = "https://github.com/tree-sitter-grammars/tree-sitter-cuda",
+        files = { "src/parser.c", "src/scanner.cc" },
+      },
+      filetype = "cuda",
+    }
+     require'nvim-treesitter.configs'.setup {
+      ensure_installed = { "c", "cpp", "python", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "cuda" },
+
         sync_install = false,
         auto_install = true,
         highlight = {
@@ -137,47 +114,86 @@ local plugins = {
   },
 
   -- Настройка LSP
-  {
+{
     'neovim/nvim-lspconfig',
     config = function()
-      local lspconfig = require('lspconfig')
-      -- Pyright настройка
-      local function get_python_path(workspace)
-        local conda_env = os.getenv('CONDA_PREFIX')
-        if conda_env then
-          return conda_env .. '/bin/python'
+      -- ==== helpers (без lspconfig.util) ====
+      local function path_exists(p) return vim.fn.executable(p) == 1 end
+      local function join(a, b) return a .. '/' .. b end
+      local function python_bin(dir) return join(join(dir, "bin"), "python") end
+
+      -- корень проекта через vim.fs.find
+      local function get_project_root(start_dir)
+        local start = start_dir or vim.loop.cwd()
+        local markers = {
+          'pyproject.toml', 'poetry.lock', 'uv.lock',
+          'requirements.txt', 'setup.py', 'setup.cfg',
+          '.git'
+        }
+        local found = vim.fs.find(markers, { path = start, upward = true })[1]
+        return found and vim.fs.dirname(found) or start
+      end
+
+      local function get_python_for(dir)
+        local venv = os.getenv('VIRTUAL_ENV')
+        if venv and path_exists(python_bin(venv)) then
+          return python_bin(venv)
         end
+        local conda = os.getenv('CONDA_PREFIX')
+        if conda and path_exists(python_bin(conda)) then
+          return python_bin(conda)
+        end
+        local root = get_project_root(dir)
+        for _, name in ipairs({'.venv', 'venv', '.env'}) do
+          local cand = python_bin(join(root, name))
+          if path_exists(cand) then
+            return cand
+          end
+        end
+        local exepath = vim.fn.exepath('python3')
+        if exepath ~= '' then return exepath end
+        exepath = vim.fn.exepath('python')
+        if exepath ~= '' then return exepath end
         return 'python'
       end
 
-      local function get_pyright_path()
-        return 'pyright-langserver'
-      end
+      -- capabilities от nvim-cmp (вкладываем в конкретные сервера)
+      local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-      lspconfig.pyright.setup {
-        cmd = { get_pyright_path(), "--stdio" },
-        settings = {
-          python = {
-            pythonPath = get_python_path(vim.fn.getcwd())
-          }
-        }
-      }
+      ----------------------------------------------------------------------
+      -- Pyright: динамически подставляем интерпретатор
+      ----------------------------------------------------------------------
+      vim.lsp.config('pyright', {
+        capabilities = capabilities,
+        on_new_config = function(config, root_dir)
+          local py = get_python_for(root_dir or vim.loop.cwd())
+          config.settings = config.settings or {}
+          config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
+            defaultInterpreterPath = py,
+            pythonPath = py,
+            analysis = { autoImportCompletions = true },
+          })
+        end,
+      })
 
-      -- Clangd настройка
-      lspconfig.clangd.setup {}
+      ----------------------------------------------------------------------
+      -- Clangd: CUDA-aware (filetypes + удобные флаги)
+      ----------------------------------------------------------------------
+      vim.lsp.config('clangd', {
+        capabilities = capabilities,
+        filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
+        cmd = { 'clangd', '--clang-tidy', '--completion-style=detailed', '--header-insertion=never' },
+      })
 
-      -- Настройки LSP
+      -- при желании сразу включи Lua LS (раз уже ставишь через mason)
+      vim.lsp.config('lua_ls', { capabilities = capabilities })
+
+      -- включаем настроенные конфиги (активируются по их filetypes)
+      vim.lsp.enable({ 'pyright', 'clangd', 'lua_ls' })
+
+      -- Остальная часть твоих LSP-настроек (signcolumn, LspAttach) — без изменений
       vim.opt.signcolumn = 'yes'
 
-      -- Добавление capabilities для nvim-cmp
-      local lspconfig_defaults = lspconfig.util.default_config
-      lspconfig_defaults.capabilities = vim.tbl_deep_extend(
-        'force',
-        lspconfig_defaults.capabilities,
-        require('cmp_nvim_lsp').default_capabilities()
-      )
-
-      -- Маппинги LSP
       vim.api.nvim_create_autocmd('LspAttach', {
         desc = 'LSP actions',
         callback = function(event)
@@ -197,7 +213,6 @@ local plugins = {
     end
   },
 
-
    -- Установка lazydev.nvim для автодополнения при редактировании конфигов Neovim
   {
     "folke/lazydev.nvim",
@@ -211,64 +226,46 @@ local plugins = {
   },
 
   -- nvim-cmp и LuaSnip
-{
-  'hrsh7th/nvim-cmp',
-  dependencies = {
-    'hrsh7th/cmp-nvim-lsp',
-    'hrsh7th/cmp-buffer',
-    'hrsh7th/cmp-path',
-    'saadparwaiz1/cmp_luasnip',
-    'L3MON4D3/LuaSnip',
-    'folke/lazydev.nvim',  -- Добавляем lazydev.nvim в зависимости
-  },
-  config = function()
-    local cmp = require'cmp'
-
-    -- Ваш текущий конфиг nvim-cmp
-    cmp.setup({
-      snippet = {
-        expand = function(args)
-          require('luasnip').lsp_expand(args.body)
-        end,
-      },
-      mapping = {
-        ['<C-y>'] = cmp.mapping.scroll_docs(-4),
-        ['<C-e>'] = cmp.mapping.scroll_docs(4),
-        ['<C-Space>'] = cmp.mapping.complete(),
-        ['<C-x>'] = cmp.mapping.close(),
-        ['<CR>'] = cmp.mapping.confirm({ select = true }),
-        ['<C-n>'] = cmp.mapping.select_next_item(),
-        ['<C-p>'] = cmp.mapping.select_prev_item(),
-      },
-      sources = cmp.config.sources({
-        { name = 'nvim_lsp' },
-        { name = 'buffer' },
-        { name = 'path' },
-        { name = 'luasnip' },
-        -- { name = 'vim_tabby' },
-        -- Добавляем источник lazydev
-        { name = 'lazydev', group_index = 0 },
-      }),
-    })
-  end
-},
-
-
--- lsp-zero
   {
-    'VonHeikemen/lsp-zero.nvim',
-    branch = 'v4.x',
+    'hrsh7th/nvim-cmp',
     dependencies = {
-      'neovim/nvim-lspconfig',
-      'hrsh7th/nvim-cmp',
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'saadparwaiz1/cmp_luasnip',
       'L3MON4D3/LuaSnip',
+      'folke/lazydev.nvim',
     },
     config = function()
-      -- Конфигурация lsp-zero (если необходима)
+      local cmp = require'cmp'
+
+      cmp.setup({
+        snippet = {
+          expand = function(args)
+            require('luasnip').lsp_expand(args.body)
+          end,
+        },
+        mapping = {
+          ['<C-y>'] = cmp.mapping.scroll_docs(-4),
+          ['<C-e>'] = cmp.mapping.scroll_docs(4),
+          ['<C-Space>'] = cmp.mapping.complete(),
+          ['<C-x>'] = cmp.mapping.close(),
+          ['<CR>'] = cmp.mapping.confirm({ select = true }),
+          ['<C-n>'] = cmp.mapping.select_next_item(),
+          ['<C-p>'] = cmp.mapping.select_prev_item(),
+        },
+        sources = cmp.config.sources({
+          { name = 'nvim_lsp' },
+          { name = 'buffer' },
+          { name = 'path' },
+          { name = 'luasnip' },
+          { name = 'lazydev', group_index = 0 },
+        }),
+      })
     end
   },
 
-    {
+  {
     'windwp/nvim-autopairs',
     config = function()
       require('nvim-autopairs').setup({})
@@ -284,18 +281,30 @@ local plugins = {
     config = function()
       local dap = require('dap')
 
-      -- Настройка для Python
-      local function get_python_path()
-        local conda_env = os.getenv('CONDA_PREFIX')
-        if conda_env then
-          return conda_env .. '/bin/python'
+      -- Настройка Python DAP (Unix)
+      local function path_exists(p) return vim.fn.executable(p) == 1 end
+      local function join(a, b) return a .. '/' .. b end
+      local function python_bin(dir) return join(join(dir, "bin"), "python") end
+
+      local function get_python_for(dir)
+        local venv = os.getenv('VIRTUAL_ENV')
+        if venv and path_exists(python_bin(venv)) then
+          return python_bin(venv)
         end
+        local conda = os.getenv('CONDA_PREFIX')
+        if conda and path_exists(python_bin(conda)) then
+          return python_bin(conda)
+        end
+        local exepath = vim.fn.exepath('python3')
+        if exepath ~= '' then return exepath end
+        exepath = vim.fn.exepath('python')
+        if exepath ~= '' then return exepath end
         return 'python'
       end
 
       dap.adapters.python = {
         type = 'executable',
-        command = get_python_path(),
+        command = get_python_for(vim.loop.cwd()),
         args = { '-m', 'debugpy.adapter' },
       }
 
@@ -305,12 +314,43 @@ local plugins = {
           request = 'launch',
           name = 'Launch with arguments',
           program = "${file}",
+          cwd = "${workspaceFolder}",
           args = {},
           pythonPath = function()
-            return get_python_path()
+            return get_python_for(vim.loop.cwd())
           end,
         },
       }
+            -- CUDA DAP через cpptools + cuda-gdb
+      dap.adapters.cppdbg = {
+        id = "cppdbg",
+        type = "executable",
+        command = vim.fn.stdpath("data") .. "/mason/bin/OpenDebugAD7",
+      }
+
+      local function cuda_gdb_path()
+        local p = os.getenv("CUDA_GDB") or "/usr/local/cuda/bin/cuda-gdb"
+        return vim.fn.executable(p) == 1 and p or "cuda-gdb"
+      end
+
+      dap.configurations.cpp = {
+        {
+          name = "Launch (cuda-gdb)",
+          type = "cppdbg",
+          request = "launch",
+          program = function()
+            return vim.fn.input("Path to exe: ", vim.loop.cwd() .. "/", "file")
+          end,
+          cwd = "${workspaceFolder}",
+          stopAtEntry = false,
+          MIMode = "gdb",
+          miDebuggerPath = cuda_gdb_path(),
+          setupCommands = {
+            { text = "-enable-pretty-printing", description = "enable pretty printing", ignoreFailures = true },
+          },
+        },
+      }
+      dap.configurations.cuda = dap.configurations.cpp
 
       -- Маппинги для nvim-dap
       vim.keymap.set('n', '<F5>', function() dap.continue() end, { noremap = true, silent = true })
@@ -388,6 +428,16 @@ local plugins = {
     end
   },
   {
+  "jay-babu/mason-nvim-dap.nvim",
+  dependencies = { "williamboman/mason.nvim", "mfussenegger/nvim-dap" },
+  config = function()
+    require("mason-nvim-dap").setup({
+      ensure_installed = { "cpptools" }, -- поставит OpenDebugAD7
+      automatic_setup = true,
+    })
+  end
+},
+  {
     'williamboman/mason-lspconfig.nvim',
     dependencies = { 'williamboman/mason.nvim', 'neovim/nvim-lspconfig' },
     config = function()
@@ -417,9 +467,6 @@ local plugins = {
       })
     end
   },
-  -- Plenary
-  { 'nvim-lua/plenary.nvim' },
-
 
   --------------------------------------------------------------------------------
   -- vim-test (запуск тестов)
@@ -439,68 +486,55 @@ local plugins = {
     end
   },
 
-    -- Harpoon
+  -- llm autocomplete --
   {
-    "ThePrimeagen/harpoon",
-    branch = "harpoon2",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    -- config = function()
-    --   local harpoon = require("harpoon")
-    --   harpoon.setup()
-    --   local ui = require("harpoon.ui")
-    --   local mark = require("harpoon.mark")
-    --
-    --   vim.keymap.set("n", "<leader>a", mark.add_file, { noremap = true, silent = true })
-    --   vim.keymap.set("n", "<C-e>", ui.toggle_quick_menu, { noremap = true, silent = true })
-    --
-    --   vim.keymap.set("n", "<C-h>", function() ui.nav_file(1) end, { noremap = true, silent = true })
-    --   vim.keymap.set("n", "<C-t>", function() ui.nav_file(2) end, { noremap = true, silent = true })
-    --   vim.keymap.set("n", "<C-n>", function() ui.nav_file(3) end, { noremap = true, silent = true })
-    --   vim.keymap.set("n", "<C-s>", function() ui.nav_file(4) end, { noremap = true, silent = true })
-    --
-    --   vim.keymap.set("n", "<C-S-P>", ui.nav_prev, { noremap = true, silent = true })
-    --   vim.keymap.set("n", "<C-S-N>", ui.nav_next, { noremap = true, silent = true })
-    -- end
-  },
-
-  --------------------------------------------------------------------------------
-  -- gitsigns (подсветка изменений в гуттере + Git-команды)
-  --------------------------------------------------------------------------------
-  {
-    'lewis6991/gitsigns.nvim',
-    config = function()
-      require('gitsigns').setup({
-        signs = {
-          add          = { text = '│' },
-          change       = { text = '│' },
-          delete       = { text = '_' },
-          topdelete    = { text = '‾' },
-          changedelete = { text = '~' },
+  'milanglacier/minuet-ai.nvim',
+  dependencies = { 'nvim-lua/plenary.nvim' },
+  config = function()
+    require('minuet').setup {
+      virtualtext = {
+        auto_trigger_ft = { 'python' }, -- автоподсказки в .py
+        keymap = {
+          accept = '<A-A>',
+          accept_line = '<A-a>',
+          accept_n_lines = '<A-z>',
+          prev = '<A-[>',     -- также вручную вызывает подсказку
+          next = '<A-]>',     -- также вручную вызывает подсказку
+          dismiss = '<A-e>',
         },
-      })
-    end
-  },
-
-
-  -- -- TabbyML/vim-tabby
-  -- {
-  --   'TabbyML/vim-tabby',
-  --   config = function()
-  --     vim.g.tabby_agent_start_command = {"npx", "tabby-agent", "--stdio"}
-  --     vim.g.tabby_inline_completion_trigger = "manual"
-  --     vim.g.tabby_inline_completion_keybinding_accept = "<Tab>"
-  --     vim.g.tabby_inline_completion_keybinding_trigger_or_dismiss = "<C-\\>"
-  --     vim.g.tabby_inline_completion_insertion_leading_key = "<C-R><C-O>="
-  --   end
-  -- },
+      },
+      provider = 'openai_fim_compatible',
+      n_completions = 1,
+      context_window = 512,
+      provider_options = {
+        openai_fim_compatible = {
+          api_key = 'TERM',  -- для Ollama можно любой непустой env var
+          name = 'Ollama',
+          end_point = 'http://localhost:11434/v1/completions',
+          model = 'qwen2.5-coder:3b', -- при желании поставьте 7b
+          stream = true,
+          optional = {
+            max_tokens = 64,
+            top_p = 0.9,
+          },
+        },
+      },
+    }
+  end,
+},
+    { 'nvim-lua/plenary.nvim' },
+    -- optional, if you are using virtual-text frontend, nvim-cmp is not
+    -- required.
+    { 'hrsh7th/nvim-cmp' },
+    -- optional, if you are using virtual-text frontend, blink is not required.
+    { 'Saghen/blink.cmp' },
 }
 
 -- Настройка плагинов с помощью lazy.nvim
 require("lazy").setup(plugins)
 
 -- Общие настройки
--- vim.opt.termguicolors = true
-vim.opt.scrolloff = 5
+vim.opt.termguicolors = true
 vim.opt.mouse = "a"
 vim.opt.number = true
 vim.opt.backup = false
@@ -518,7 +552,6 @@ vim.opt.smartindent = true
 vim.opt.splitbelow = true
 vim.opt.splitright = true
 vim.opt.swapfile = false
-vim.opt.termguicolors = true
 vim.opt.timeoutlen = 1000
 vim.opt.undofile = true
 vim.opt.updatetime = 300
@@ -526,17 +559,70 @@ vim.opt.writebackup = false
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
-vim.opt.cursorline = false 
-vim.opt.number = true
+vim.opt.cursorline = true
 vim.opt.laststatus = 3
 vim.opt.showcmd = false
 vim.opt.ruler = false
 vim.opt.numberwidth = 4
-vim.opt.signcolumn = "yes"
 vim.opt.wrap = false
 vim.opt.scrolloff = 8
 vim.opt.sidescrolloff = 8
 
+
+-- folding --
+vim.o.foldcolumn = "1"
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'qf',
+  callback = function()
+    local o = { buffer = true, silent = true }
+    -- n/p — перейти к след./пред. валидной записи и вернуться в quickfix
+    vim.keymap.set('n', 'n', '<Cmd>cnext<CR><C-w>p', o)
+    vim.keymap.set('n', 'p', '<Cmd>cprev<CR><C-w>p', o)
+  end,
+})
+
+
+-- :make running pytest from project root
+local grp = vim.api.nvim_create_augroup('pytest_make_root', { clear = true })
+
+local function project_root(buf)
+  local f = vim.api.nvim_buf_get_name(buf)
+  local start = (f ~= '' and vim.fs.dirname(f)) or vim.loop.cwd()
+  local markers = { 'pyproject.toml', 'pytest.ini', 'setup.cfg', 'tox.ini', '.git' }
+  local found = vim.fs.find(markers, { path = start, upward = true })[1]
+  return found and vim.fs.dirname(found) or vim.loop.cwd()
+end
+
+vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter' }, {
+  group = grp,
+  pattern = { '*.py', 'pytest.ini', 'pyproject.toml', 'setup.cfg', 'tox.ini' },
+  callback = function(args)
+    local root = project_root(args.buf)
+    -- Команда: cd в корень и запуск pytest по всему проекту
+    vim.opt_local.makeprg = ('cd %s && python3 -m pytest --color=no .'):format(
+      vim.fn.shellescape(root)
+    )
+    -- Парсинг ошибок в quickfix
+    vim.opt_local.errorformat = table.concat({
+      '%f:%l: %m',
+      '%f:%l:%c: %m',
+      '%-G%.%#',
+    }, ',')
+    -- Хоткей: <leader>m -> :make + quickfix
+    vim.keymap.set('n', '<leader>m', function()
+      vim.cmd('make')
+      vim.cmd('copen')
+    end, { buffer = true, desc = 'Run pytest from project root' })
+  end,
+})
 
 -- Маппинги
 local keymap = vim.keymap.set
@@ -561,30 +647,11 @@ vim.keymap.set('n', '<leader>bb', ':ls<CR>:b ', { noremap = true })
 -- vim.o.background = "dark" -- or "light" for light mode
 vim.cmd([[colorscheme vim]])
 
--- Отключение netrw в начале файла
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
-
--- Функция для поиска корня репозитория
-local function get_git_root()
-  local git_dir = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
-  if vim.v.shell_error == 0 then
-    return git_dir
+do
+  local ok1, _ = pcall(require, 'dap')
+  local ok2, vscode = pcall(require, 'dap.ext.vscode')
+  if ok1 and ok2 and vscode then
+    -- Map "python" type in launch.json to nvim-dap's python adapter id(s)
+    vscode.load_launchjs(nil, { python = { 'python' } })
   end
-  return nil
 end
-
--- Автокоманда для установки PYTHONPATH при открытии файла/папки
-vim.api.nvim_create_autocmd({"BufEnter", "DirChanged"}, {
-  callback = function()
-    local root = get_git_root()
-    if root then
-      vim.env.PYTHONPATH = root
-      print("PYTHONPATH set to: " .. root)
-    else
-      print("Could not determine git root.")
-    end
-  end,
-})
-
