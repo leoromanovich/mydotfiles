@@ -62,8 +62,6 @@ local plugins = {
   -- nvim-web-devicons
   { 'nvim-tree/nvim-web-devicons' },
 
-
-  { "ellisonleao/gruvbox.nvim", priority = 1000 , config = true},
   -- nvim-tree
   {
     'nvim-tree/nvim-tree.lua',
@@ -96,7 +94,7 @@ local plugins = {
     parser_config.cuda = {
       install_info = {
         url = "https://github.com/tree-sitter-grammars/tree-sitter-cuda",
-        files = { "src/parser.c", "src/scanner.cc" },
+        files = { "src/parser.c"},
       },
       filetype = "cuda",
     }
@@ -121,6 +119,11 @@ local plugins = {
       local function path_exists(p) return vim.fn.executable(p) == 1 end
       local function join(a, b) return a .. '/' .. b end
       local function python_bin(dir) return join(join(dir, "bin"), "python") end
+      -- выбрать бинарь из Mason, если он установлен
+      local function mason_exe(exe)
+        local bin = vim.fn.stdpath("data") .. "/mason/bin/" .. exe
+        return (vim.fn.executable(bin) == 1) and bin or exe
+       end
 
       -- корень проекта через vim.fs.find
       local function get_project_root(start_dir)
@@ -157,25 +160,28 @@ local plugins = {
         return 'python'
       end
 
+
       -- capabilities от nvim-cmp (вкладываем в конкретные сервера)
       local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
       ----------------------------------------------------------------------
       -- Pyright: динамически подставляем интерпретатор
       ----------------------------------------------------------------------
-      vim.lsp.config('pyright', {
-        capabilities = capabilities,
-        on_new_config = function(config, root_dir)
-          local py = get_python_for(root_dir or vim.loop.cwd())
-          config.settings = config.settings or {}
-          config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
-            defaultInterpreterPath = py,
-            pythonPath = py,
-            analysis = { autoImportCompletions = true },
-          })
-        end,
-      })
 
+      vim.lsp.config('pyright', {
+          cmd = { mason_exe("pyright-langserver"), "--stdio" },
+          filetypes = { "python" },
+          capabilities = capabilities,
+          on_new_config = function(config, root_dir)
+            local py = get_python_for(root_dir or vim.loop.cwd())
+            config.settings = config.settings or {}
+            config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
+              defaultInterpreterPath = py,
+              pythonPath = py,
+              analysis = { autoImportCompletions = true },
+            })
+          end,
+      })
       ----------------------------------------------------------------------
       -- Clangd: CUDA-aware (filetypes + удобные флаги)
       ----------------------------------------------------------------------
@@ -569,6 +575,7 @@ vim.opt.scrolloff = 8
 vim.opt.sidescrolloff = 8
 
 
+
 -- folding --
 vim.o.foldcolumn = "1"
 vim.o.foldlevel = 99
@@ -645,7 +652,7 @@ vim.keymap.set('n', '<S-Tab>', ':bprevious<CR>', { noremap = true, silent = true
 vim.keymap.set('n', '<leader>bb', ':ls<CR>:b ', { noremap = true })
 
 -- vim.o.background = "dark" -- or "light" for light mode
-vim.cmd([[colorscheme vim]])
+vim.cmd([[colorscheme slate]])
 
 do
   local ok1, _ = pcall(require, 'dap')
