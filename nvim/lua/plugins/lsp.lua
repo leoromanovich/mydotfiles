@@ -56,20 +56,58 @@ return {
       -- Pyright: динамически подставляем интерпретатор
       ----------------------------------------------------------------------
 
-      vim.lsp.config('pyright', {
-          cmd = { mason_exe("pyright-langserver"), "--stdio" },
-          filetypes = { "python" },
-          capabilities = capabilities,
-          on_new_config = function(config, root_dir)
-            local py = get_python_for(root_dir or vim.loop.cwd())
-            config.settings = config.settings or {}
-            config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
-              defaultInterpreterPath = py,
-              pythonPath = py,
-              analysis = { autoImportCompletions = true },
-            })
-          end,
-      })
+      -- vim.lsp.config('pyright', {
+      --     cmd = { mason_exe("pyright-langserver"), "--stdio" },
+      --     filetypes = { "python" },
+      --     capabilities = capabilities,
+      --     on_new_config = function(config, root_dir)
+      --       local py = get_python_for(root_dir or vim.loop.cwd())
+      --       config.settings = config.settings or {}
+      --       config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
+      --         defaultInterpreterPath = py,
+      --         pythonPath = py,
+      --         analysis = { autoImportCompletions = true },
+      --       })
+      --     end,
+      -- })
+    vim.lsp.config('pyright', {
+      cmd = { mason_exe("pyright-langserver"), "--stdio" },
+      filetypes = { "python" },
+      capabilities = capabilities,
+      on_new_config = function(config, root_dir)
+        local root = root_dir or get_project_root(vim.loop.cwd())
+        local py = get_python_for(root)
+
+        -- Собираем кандидатов для PYTHONPATH Pyright'а
+        local extra = {}
+        -- 1) сам корень — чтобы импорты из корня резолвились внутри tests/*
+        table.insert(extra, root)
+        -- 2) поддержка src-layout (если есть)
+        local src = join(root, "src")
+        if vim.fn.isdirectory(src) == 1 then
+          table.insert(extra, src)
+        end
+        -- 3) (опционально) утилитные пакеты в tests/, если ты их импортируешь как модули
+        local tests = join(root, "tests")
+        if vim.fn.isdirectory(tests) == 1 then
+          table.insert(extra, tests)
+        end
+
+        config.settings = config.settings or {}
+        config.settings.python = vim.tbl_deep_extend('force', config.settings.python or {}, {
+          defaultInterpreterPath = py,
+          pythonPath = py,
+          analysis = {
+            autoImportCompletions = true,
+            diagnosticMode = "workspace",
+            -- главное — вот это:
+            extraPaths = extra,
+          },
+        })
+      end,
+    })
+
+
       ----------------------------------------------------------------------
       -- Clangd: CUDA-aware (filetypes + удобные флаги)
       ----------------------------------------------------------------------
