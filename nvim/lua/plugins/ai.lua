@@ -1,76 +1,48 @@
 return {
   {
-    'milanglacier/minuet-ai.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
+    'yetone/avante.nvim',
+    build = 'make',  -- у плагина есть сборочный шаг
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      -- avante рекомендует markdown-рендерер
+      'MeanderingProgrammer/render-markdown.nvim',
+      -- иконки (для UI панелей)
+      'echasnovski/mini.icons',
+    },
     config = function()
-      local curl = require('plenary.curl')
+      -- базовый рендерер Markdown, чтобы чат красиво отображался
+      require('render-markdown').setup({})
 
-      local OLLAMA_ENDPOINT  = 'http://localhost:11434/v1/completions'
-      local OLLAMA_MODEL     = 'qwen2.5-coder:3b'
-
-      local SGLANG_ENDPOINT  = 'http://localhost:30000/v1/completions'
-      local SGLANG_MODEL     = 'qwen2.5-coder:7b'
-
-      local function alive(url, model)
-        local ok, res = pcall(function()
-          return curl.post(url, {
-            timeout = 1200, -- мс
-            headers = {
-              ['Content-Type'] = 'application/json',
-              ['Authorization'] = 'Bearer TERM',
-            },
-            body = vim.json.encode({
-              model = model,
-              prompt = "<fim_prefix>ping<fim_suffix><fim_middle>",
-              max_tokens = 1,
-              stream = false,
-            }),
-          })
-        end)
-        if not ok or not res or res.status ~= 200 then return false end
-        local okj, data = pcall(vim.json.decode, res.body)
-        return okj and data and data.choices ~= nil
-      end
-
-      local ENDPOINT, MODEL, NAME = OLLAMA_ENDPOINT, OLLAMA_MODEL, 'Ollama'
-      if alive(OLLAMA_ENDPOINT, OLLAMA_MODEL) then
-        vim.notify('[minuet] использую Ollama (11434), модель: ' .. OLLAMA_MODEL, vim.log.levels.INFO)
-      elseif alive(SGLANG_ENDPOINT, SGLANG_MODEL) then
-        ENDPOINT, MODEL, NAME = SGLANG_ENDPOINT, SGLANG_MODEL, 'SGLang'
-        vim.notify('[minuet] основной недоступен, использую SGLang (30000), модель: ' .. SGLANG_MODEL, vim.log.levels.WARN)
-      else
-        vim.notify('[minuet] ни Ollama:11434, ни SGLang:30000 не отвечают — оставляю Ollama по умолчанию', vim.log.levels.ERROR)
-      end
-
-      require('minuet').setup {
-        virtualtext = {
-          auto_trigger_ft = { 'python' },
-          keymap = {
-            accept = '<A-A>',
-            accept_line = '<A-a>',
-            accept_n_lines = '<A-z>',
-            prev = '<A-[>',
-            next = '<A-]>',
-            dismiss = '<A-e>',
+      -- Минимальная настройка Avante под OpenAI-совместимую точку на 30000
+      require('avante').setup({
+        -- используем кастомного провайдера, наследованного от openai
+        provider = 'sglang',
+        providers = {
+          sglang = {
+            __inherited_from = 'openai',
+            endpoint = 'http://localhost:30000/v1', -- база (не /chat/completions)
+            api_key_name = 'TERM',                  -- подставит Authorization: Bearer $TERM
+            model = 'qwen2.5-coder:7b',
+            timeout = 30000,                        -- мс
+            -- ВАЖНО: если твой сервер не поддерживает OpenAI tools/function-calling,
+            -- раскомментируй следующую строку (тогда файлы будут передаваться простым текстом):
+            -- disable_tools = true,
           },
         },
-        provider = 'openai_fim_compatible',
-        n_completions = 1,
-        context_window = 512,
-        provider_options = {
-          openai_fim_compatible = {
-            api_key = 'TERM',
-            name = NAME,          -- 'Ollama' или 'SGLang'
-            end_point = ENDPOINT, -- выбранный эндпоинт
-            model = MODEL,        -- 3b для Ollama, 7b для SGLang
-            stream = true,
-            optional = {
-              max_tokens = 64,
-              top_p = 0.9,
-            },
-          },
-        },
-      }
+
+        -- поведение по умолчанию: чат в боковой панели, можно читать файлы/глобить и т.д.
+        -- оставляем дефолты максимально «минимальными»
+      })
+
+      -- Быстрые хоткеи (минимум для старта)
+      vim.keymap.set('n', '<leader>aa', function()
+        require('avante').toggle()  -- открыть/закрыть чат (sidebar)
+      end, { desc = 'Avante: Chat sidebar' })
+
+      vim.keymap.set({ 'n', 'x' }, '<leader>ae', function()
+        require('avante').edit()    -- режим правок по выделению (кратко: «сделай вот это с этим кодом»)
+      end, { desc = 'Avante: Edit selection' })
     end,
   },
 }

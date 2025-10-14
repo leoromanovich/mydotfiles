@@ -29,6 +29,6 @@ ls.add_snippets("python", {
     i(1, "array"),        -- имя файла (без расширения)
     t(".npy', "),
     i(2, "arr"),          -- переменная
-    t(".detach().numpy() # DEBUG")
+    t(".detach().cpu().numpy() # DEBUG")
   }),
 })
