@@ -52,7 +52,7 @@ return {
     require('minuet').setup {
       provider = 'openai_compatible',
       openai_compatible = {
-        endpoint = 'http://localhost:313131/v1/completions', -- оставляем completions
+        endpoint = 'http://localhost:31313/v1/completions', -- оставляем completions
         model = 'coder',
 
         -- Генерация
