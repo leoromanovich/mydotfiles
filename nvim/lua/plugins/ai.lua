@@ -69,7 +69,7 @@ return {
 
       provider = 'openai_fim_compatible',
       n_completions = 1,
-      context_window = 512,
+      context_window = 2048,
       notify = false, -- ТИШИНА при ошибках
 
       -- два пресета: локальный на 31313 и запасной Ollama на 11434
@@ -96,7 +96,7 @@ return {
               api_key = function() return 'dummy' end,
               model = 'qwen2.5-coder:3b',
               stream = true,
-              optional = { max_tokens = 150, top_p = 0.9, temperature = 0.1 },
+              optional = { max_tokens = 50, top_p = 0.9, temperature = 0.1 },
             },
           },
         },
