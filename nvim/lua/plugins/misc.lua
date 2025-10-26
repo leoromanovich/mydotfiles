@@ -1,8 +1,5 @@
 return {
-  -- nvim-web-devicons
-  { 'nvim-tree/nvim-web-devicons' },
-
-  -- lazydev.nvim для lua
+  { "nvim-tree/nvim-web-devicons" },
   {
     "folke/lazydev.nvim",
     ft = "lua",
@@ -12,28 +9,28 @@ return {
       },
     },
   },
-
-  { 'windwp/nvim-autopairs', config = function() require('nvim-autopairs').setup({}) end },
-
-  { 'nvim-neotest/nvim-nio' },
-
-  -- Comment.nvim
   {
-    'numToStr/Comment.nvim',
+    "windwp/nvim-autopairs",
     config = function()
-      require('Comment').setup({
-        toggler = { line = 'gcc', block = 'gbc' },
-        opleader = { line = 'gc', block = 'gb' },
-        mappings = { basic = true, extra = true },
-      })
-    end
+      require("nvim-autopairs").setup({})
+    end,
   },
 
-  { 'nvim-lua/plenary.nvim' },
-  { 'hrsh7th/nvim-cmp' },
-  { 'Saghen/blink.cmp' },
+  { "nvim-neotest/nvim-nio" },
 
-  -- === LuaSnip + загрузчики ===
+  {
+    "numToStr/Comment.nvim",
+    config = function()
+      require("Comment").setup({
+        toggler = { line = "gcc", block = "gbc" },
+        opleader = { line = "gc", block = "gb" },
+        mappings = { basic = true, extra = true },
+      })
+    end,
+  },
+
+  { "nvim-lua/plenary.nvim" },
+  { "Saghen/blink.cmp" },
   {
     "L3MON4D3/LuaSnip",
     build = "make install_jsregexp",
@@ -58,9 +55,17 @@ return {
       end)
 
       -- хоткеи: прыжки/выбор
-      vim.keymap.set({ "i", "s" }, "<C-j>", function() ls.expand_or_jump() end, { desc = "LuaSnip expand/jump" })
-      vim.keymap.set({ "i", "s" }, "<C-k>", function() ls.jump(-1) end, { desc = "LuaSnip jump back" })
-      vim.keymap.set("i", "<C-l>", function() if ls.choice_active() then ls.change_choice(1) end end, { desc = "LuaSnip next choice" })
+      vim.keymap.set({ "i", "s" }, "<C-j>", function()
+        ls.expand_or_jump()
+      end, { desc = "LuaSnip expand/jump" })
+      vim.keymap.set({ "i", "s" }, "<C-k>", function()
+        ls.jump(-1)
+      end, { desc = "LuaSnip jump back" })
+      vim.keymap.set("i", "<C-l>", function()
+        if ls.choice_active() then
+          ls.change_choice(1)
+        end
+      end, { desc = "LuaSnip next choice" })
 
       -- перезагрузка сниппетов без перезапуска Neovim
       vim.keymap.set("n", "<leader>us", function()
@@ -72,7 +77,4 @@ return {
       end, { desc = "Reload LuaSnip snippets" })
     end,
   },
-
-  -- Коллекция готовых сниппетов (необязательно, но удобно)
-  -- { "rafamadriz/friendly-snippets" },
 }

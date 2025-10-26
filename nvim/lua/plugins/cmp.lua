@@ -1,41 +1,52 @@
 return {
-  -- nvim-cmp и LuaSnip
+  -- blink.cmp + LuaSnip + lazydev
   {
-    'hrsh7th/nvim-cmp',
+    "saghen/blink.cmp",
+    version = "1.*", -- стабильные релизы
     dependencies = {
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-buffer',
-      'hrsh7th/cmp-path',
-      'saadparwaiz1/cmp_luasnip',
-      'L3MON4D3/LuaSnip',
-      'folke/lazydev.nvim',
+      "L3MON4D3/LuaSnip",
+      { "folke/lazydev.nvim", ft = "lua", opts = {} },
+      -- (опционально) набор готовых сниппетов
+      { "rafamadriz/friendly-snippets", lazy = true },
     },
-    config = function()
-      local cmp = require'cmp'
+    opts = {
+      fuzzy = { implementation = "prefer_rust" },
+      -- ключевые бинды, максимально близко к твоим из nvim-cmp
+      keymap = {
+        preset = "enter", -- включает <CR>, <C-Space>, <C-n>/<C-p>, Tab/S-Tab и т.д.
+        ["<C-y>"] = { "scroll_documentation_up", "fallback" },
+        ["<C-e>"] = { "scroll_documentation_down", "fallback" },
+        ["<C-x>"] = { "hide", "fallback" },
+      },
 
-      cmp.setup({
-        snippet = {
-          expand = function(args)
-            require('luasnip').lsp_expand(args.body)
-          end,
+      completion = {
+        list = { selection = { preselect = true, auto_insert = false } }, -- чтобы <CR> подтверждал выбранное, как раньше
+        documentation = { auto_show = true, auto_show_delay_ms = 100 },
+        ghost_text = { enabled = true },
+      },
+
+      -- источники: LSP, путь, сниппеты, буфер (+ lazydev для Lua)
+      sources = {
+        default = { "lsp", "path", "snippets", "buffer" },
+        per_filetype = {
+          lua = { inherit_defaults = true, "lazydev" },
         },
-        mapping = {
-          ['<C-y>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-e>'] = cmp.mapping.scroll_docs(4),
-          ['<C-Space>'] = cmp.mapping.complete(),
-          ['<C-x>'] = cmp.mapping.close(),
-          ['<CR>'] = cmp.mapping.confirm({ select = true }),
-          ['<C-n>'] = cmp.mapping.select_next_item(),
-          ['<C-p>'] = cmp.mapping.select_prev_item(),
+        providers = {
+          -- интеграция lazydev для completion внутри Neovim/Lua
+          lazydev = {
+            name = "LazyDev",
+            module = "lazydev.integrations.blink",
+            score_offset = 100, -- поднимаем приоритет
+          },
         },
-        sources = cmp.config.sources({
-          { name = 'nvim_lsp' },
-          { name = 'buffer' },
-          { name = 'path' },
-          { name = 'luasnip' },
-          { name = 'lazydev', group_index = 0 },
-        }),
-      })
-    end
+      },
+
+      signature = { enabled = true },
+      -- используем LuaSnip в качестве движка сниппетов
+      snippets = {
+        preset = "luasnip",
+        -- friendly-snippets подхватятся автоматически, если установлены
+      },
+    },
   },
 }

@@ -1,4 +1,3 @@
-
 -- Отключение netrw в начале файла
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -38,8 +37,6 @@ vim.opt.wrap = false
 vim.opt.scrolloff = 8
 vim.opt.sidescrolloff = 8
 
-
-
 -- folding --
 vim.o.foldcolumn = "1"
 vim.o.foldlevel = 99
@@ -48,3 +45,5 @@ vim.o.foldenable = true
 
 vim.o.foldmethod = "expr"
 vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+
+vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"

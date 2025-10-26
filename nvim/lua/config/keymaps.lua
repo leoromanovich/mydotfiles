@@ -1,4 +1,3 @@
-
 -- Маппинги
 local keymap = vim.keymap.set
 local opts = { silent = true }
@@ -10,27 +9,35 @@ keymap("n", "<C-k>", "<C-w>k", opts)
 keymap("n", "<C-l>", "<C-w>l", opts)
 
 -- Изменение размеров окон
-keymap("n", "<C-Up>", ":resize -2<CR>", opts)
-keymap("n", "<C-Down>", ":resize +2<CR>", opts)
-keymap("n", "<C-Left>", ":vertical resize -2<CR>", opts)
-keymap("n", "<C-Right>", ":vertical resize +2<CR>", opts)
+keymap("n", "<leader><Up>", ":resize -4<CR>", opts)
+keymap("n", "<leader><Down>", ":resize +4<CR>", opts)
+keymap("n", "<leader><Left>", ":vertical resize +4<CR>", opts)
+keymap("n", "<leader><Right>", ":vertical resize -4<CR>", opts)
 
-vim.keymap.set('n', '<Tab>', ':bnext<CR>', { noremap = true, silent = true })
-vim.keymap.set('n', '<S-Tab>', ':bprevious<CR>', { noremap = true, silent = true })
-vim.keymap.set('n', '<leader>bb', ':ls<CR>:b ', { noremap = true })
+vim.keymap.set("n", "<Tab>", ":bnext<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<S-Tab>", ":bprevious<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>bb", ":ls<CR>:b ", { noremap = true })
 vim.keymap.set("n", "<leader>d", function()
   vim.diagnostic.open_float(nil, { scope = "line" })
 end, { desc = "Show diagnostics for the current line" })
 
-vim.api.nvim_create_user_command('RmDebugLines', function(opts)
+vim.api.nvim_create_user_command("RmDebugLines", function(opts)
   -- если выделен диапазон — работает по выделению; иначе по всему файлу
-  local range = (opts.range == 0) and '%' or ([[%d,%d]]):format(opts.line1, opts.line2)
+  local range = (opts.range == 0) and "%" or ([[%d,%d]]):format(opts.line1, opts.line2)
   vim.cmd(range .. [[g/\v#\s*DEBUG/d]])
 end, { range = true, desc = 'Удалить строки с "# DEBUG"' })
 
-vim.keymap.set('n', '<leader>rmd', function()
-  vim.cmd('RmDebugLines')                -- по всему файлу
+vim.keymap.set("n", "<leader>rmd", function()
+  vim.cmd("RmDebugLines") -- по всему файлу
 end, { desc = 'Удалить строки с "# DEBUG" во всём файле' })
 
-vim.keymap.set('v', '<leader>rmd', [[:'<,'>RmDebugLines<CR>]],
-  { desc = 'Удалить строки с "# DEBUG" в выделении' })
+vim.keymap.set(
+  "v",
+  "<leader>rmd",
+  [[:'<,'>RmDebugLines<CR>]],
+  { desc = 'Удалить строки с "# DEBUG" в выделении' }
+)
+
+vim.keymap.set("n", "<leader>rf", function()
+  require("conform").format()
+end)
