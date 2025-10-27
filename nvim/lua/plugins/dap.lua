@@ -5,7 +5,6 @@ return {
     config = function()
       local dap = require("dap")
 
-      -- Настройка Python DAP (Unix)
       local function path_exists(p)
         return vim.fn.executable(p) == 1
       end
@@ -16,7 +15,7 @@ return {
         return join(join(dir, "bin"), "python")
       end
 
-      local function get_python_for(dir)
+      local function get_python_for()
         local venv = os.getenv("VIRTUAL_ENV")
         if venv and path_exists(python_bin(venv)) then
           return python_bin(venv)
@@ -36,13 +35,36 @@ return {
         return "python"
       end
 
-      dap.adapters.python = {
-        type = "executable",
-        command = get_python_for(vim.loop.cwd()),
-        args = { "-m", "debugpy.adapter" },
-      }
+      dap.set_exception_breakpoints({ "raised", "uncaught" })
+      local cache = vim.fn.stdpath("cache")
+      vim.fn.mkdir(cache .. "/debugpy", "p")
 
-      -- CUDA DAP через cpptools + cuda-gdb
+      dap.adapters.python = function(cb)
+        cb({
+          type = "executable",
+          command = get_python_for(),
+          args = { "-m", "debugpy.adapter" },
+          options = { env = { DEBUGPY_LOG_DIR = cache .. "/debugpy" } }, -- логи debugpy
+        })
+      end
+
+      dap.configurations.python = {
+        {
+          name = "Launch current file",
+          type = "python",
+          request = "launch", -- <── ОБЯЗАТЕЛЬНО
+          program = "${file}",
+          cwd = "${workspaceFolder}", -- стабильнее на macOS
+          console = "integratedTerminal", -- по желанию
+          pythonPath = function()
+            return get_python_for()
+          end,
+          justMyCode = false, -- чтобы видеть и сторонний код (по желанию)
+          redirectOutput = true, -- <— traceback и print попадут в DAP REPL
+          -- console = "integratedTerminal", -- альтернатива: открыть отдельный терминал
+          showReturnValue = true,
+        },
+      } -- CUDA DAP через cpptools + cuda-gdb
       dap.adapters.cppdbg = {
         id = "cppdbg",
         type = "executable",
@@ -123,23 +145,17 @@ return {
       local dap = require("dap")
       local dapui = require("dapui")
 
-      -- ВАЖНО: новая схема конфигурации (layouts вместо sidebar/tray)
-      -- Если используешь Lua LS типы, можно ещё добавить строку ниже, чтобы не видеть ложных missing-fields,
-      -- когда ты намеренно опускаешь поля и полагаешься на дефолты:
       -- ---@diagnostic disable-next-line: missing-fields
       dapui.setup({
-        -- необязательные "поведенческие" флаги (по желанию)
         expand_lines = true,
         force_buffers = true,
 
-        -- Общие хоткеи элементов (можно опустить — есть дефолты)
         element_mappings = {
           scopes = { expand = { "<CR>", "<2-LeftMouse>" }, edit = "e", repl = "r" },
           watches = { expand = "<CR>", remove = "d", edit = "e", repl = "r" },
           breakpoints = { open = "o", toggle = "t" },
         },
 
-        -- НОВЫЙ способ описывать расположение окон
         layouts = {
           {
             position = "left",
@@ -158,21 +174,18 @@ return {
           },
         },
 
-        -- Панель управления (кнопки воспроизведения/шагов и т.д.)
         controls = {
           enabled = true,
           element = "repl",
           -- icons = { ... } -- можешь переопределить при желании
         },
 
-        -- Рендеринг длинных значений
         render = {
           max_type_length = nil,
           max_value_lines = 100,
         },
       })
 
-      -- Авто-открытие/закрытие UI — оставить как есть
       dap.listeners.after.event_initialized["dapui_config"] = function()
         dapui.open()
       end
