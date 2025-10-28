@@ -41,3 +41,18 @@ vim.keymap.set(
 vim.keymap.set("n", "<leader>rf", function()
   require("conform").format()
 end)
+
+
+vim.keymap.set("n", "<leader>ld", function() vim.diagnostic.setloclist({ open = true }) end, { desc = "Diagnostics (buffer) → loclist" })
+vim.keymap.set("n", "<leader>qd", function() vim.diagnostic.setqflist({ open = true }) end, { desc = "Diagnostics (workspace) → quickfix" })
+vim.keymap.set("n", "<leader>de", function() vim.diagnostic.open_float(nil, { focus=false }) end, { desc = "Hover diagnostic" })
+
+vim.keymap.set(
+  "v",
+  "<leader>xb",
+  [[:<C-U>'<,'>w !bash -eux -s<CR>]],
+  { desc = "Run visual selection in bash (-eux)" }
+)
+
+
+
