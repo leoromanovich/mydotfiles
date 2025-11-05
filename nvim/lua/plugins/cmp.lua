@@ -6,12 +6,10 @@ return {
     dependencies = {
       "L3MON4D3/LuaSnip",
       { "folke/lazydev.nvim", ft = "lua", opts = {} },
-      -- (опционально) набор готовых сниппетов
       { "rafamadriz/friendly-snippets", lazy = true },
     },
     opts = {
       fuzzy = { implementation = "prefer_rust" },
-      -- ключевые бинды, максимально близко к твоим из nvim-cmp
       keymap = {
         preset = "enter", -- включает <CR>, <C-Space>, <C-n>/<C-p>, Tab/S-Tab и т.д.
         ["<C-y>"] = { "scroll_documentation_up", "fallback" },
@@ -25,14 +23,12 @@ return {
         ghost_text = { enabled = true },
       },
 
-      -- источники: LSP, путь, сниппеты, буфер (+ lazydev для Lua)
       sources = {
         default = { "lsp", "path", "snippets", "buffer" },
         per_filetype = {
           lua = { inherit_defaults = true, "lazydev" },
         },
         providers = {
-          -- интеграция lazydev для completion внутри Neovim/Lua
           lazydev = {
             name = "LazyDev",
             module = "lazydev.integrations.blink",
@@ -42,10 +38,8 @@ return {
       },
 
       signature = { enabled = true },
-      -- используем LuaSnip в качестве движка сниппетов
       snippets = {
         preset = "luasnip",
-        -- friendly-snippets подхватятся автоматически, если установлены
       },
     },
   },

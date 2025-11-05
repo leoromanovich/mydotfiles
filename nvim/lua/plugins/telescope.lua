@@ -17,6 +17,13 @@ return {
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
       vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
       vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
+      vim.keymap.set("n", "<leader>fa", function()
+        require("telescope.builtin").find_files({
+          hidden = true, -- показывать скрытые файлы (.*)
+          no_ignore = true, -- игнорировать .gitignore (т.е. показывать игнорируемые)
+          file_ignore_patterns = { "^%.git/" }, -- но исключить каталог .git
+        })
+      end, { desc = "Find all files (incl. ignored), excluding .git" })
     end,
   },
 

@@ -112,9 +112,29 @@ return {
           "clangd",
           "--clang-tidy",
           "--completion-style=detailed",
+          "--background-index",
           "--header-insertion=never",
         },
+        init_options = {
+          fallbackFlags = { "-std=c++17", "-xcuda" },
+        },
       })
+      vim.keymap.set("n", "<leader>cr", function()
+        local file = vim.fn.expand("%:p")
+        vim.fn.jobstart({ "leetgpu", "run", file, "--mode", "functional" }, {
+          stdout_buffered = true,
+          on_stdout = function(_, data)
+            if data then
+              vim.api.nvim_echo({ { table.concat(data, "\n"), "Normal" } }, false, {})
+            end
+          end,
+          on_stderr = function(_, data)
+            if data then
+              vim.api.nvim_echo({ { table.concat(data, "\n"), "ErrorMsg" } }, false, {})
+            end
+          end,
+        })
+      end, { desc = "Run current CUDA file on LeetGPU" })
 
       -- при желании сразу включи Lua LS (раз уже ставишь через mason)
       vim.lsp.config("lua_ls", { capabilities = capabilities })
