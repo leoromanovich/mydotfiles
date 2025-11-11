@@ -169,7 +169,7 @@ return {
           },
           {
             position = "bottom",
-            size = 10, -- кол-во строк
+            size = 40, -- кол-во строк
             elements = { { id = "repl", size = 1 } },
           },
         },
