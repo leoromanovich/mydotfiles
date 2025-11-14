@@ -8,7 +8,7 @@ return {
         defaults = {
           layout_strategy = "horizontal",
           layout_config = {
-            preview_width = 0.7,
+            preview_width = 0.5,
           },
         },
       })
@@ -21,7 +21,7 @@ return {
         require("telescope.builtin").find_files({
           hidden = true, -- показывать скрытые файлы (.*)
           no_ignore = true, -- игнорировать .gitignore (т.е. показывать игнорируемые)
-          file_ignore_patterns = { "^%.git/" }, -- но исключить каталог .git
+          file_ignore_patterns = { "^%.git/", ".coache"}, -- но исключить каталог .git
         })
       end, { desc = "Find all files (incl. ignored), excluding .git" })
     end,

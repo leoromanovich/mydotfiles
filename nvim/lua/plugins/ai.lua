@@ -65,7 +65,7 @@ return {
     vim.g.llama_config = {
       endpoint = "http://127.0.0.1:8012/infill",
       auto_fim = true,            -- временно ручной режим
-      show_info = true,
+      show_info = false,
       -- дай модели больше окружения вокруг курсора:
       context = { before = 8000, after = 4000, ring = 64 },
       ft = { "python", "lua", "cpp", "c", "javascript", "typescript", "rust" },
