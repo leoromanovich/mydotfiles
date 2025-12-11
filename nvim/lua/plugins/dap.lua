@@ -136,6 +136,9 @@ return {
       vim.keymap.set("n", "<leader>du", function()
         require("dapui").toggle({ reset = true })
       end, { desc = "DAP UI toggle" })
+      vim.keymap.set("n", "<leader>dr", function()
+        require("dap").restart()
+      end, { desc = "DAP Restart" })
     end,
   },
   {
