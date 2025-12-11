@@ -147,6 +147,7 @@ return {
 
       -- ---@diagnostic disable-next-line: missing-fields
       dapui.setup({
+
         expand_lines = true,
         force_buffers = true,
 
@@ -161,10 +162,16 @@ return {
             position = "left",
             size = 40, -- кол-во колонок (или 0.x как доля ширины)
             elements = {
-              { id = "scopes", size = 0.25 },
-              { id = "breakpoints", size = 0.25 },
-              { id = "stacks", size = 0.25 },
-              { id = "watches", size = 0.25 },
+              { id = "scopes", size = 0.8 },
+              { id = "breakpoints", size = 0.2 },
+            },
+          },
+          {
+            position = "right",
+            size = 40, -- кол-во колонок (или 0.x как доля ширины)
+            elements = {
+              { id = "stacks", size = 0.2 },
+              { id = "watches", size = 0.8 },
             },
           },
           {
