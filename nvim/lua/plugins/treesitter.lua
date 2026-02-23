@@ -9,7 +9,7 @@ return {
       parser_config.cuda = {
         install_info = {
           url = "https://github.com/tree-sitter-grammars/tree-sitter-cuda",
-          files = { "src/parser.c" },
+          files = { "src/parser.c", "src/scanner.c" },
         },
         filetype = "cuda",
       }

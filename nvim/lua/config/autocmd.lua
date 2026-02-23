@@ -41,3 +41,25 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.keymap.set("n", "p", "<Cmd>cprev<CR><C-w>p", o)
   end,
 })
+
+local viewgrp = vim.api.nvim_create_augroup("remember_folds", { clear = true })
+
+vim.api.nvim_create_autocmd("BufWinLeave", {
+  group = viewgrp,
+  pattern = "*",
+  callback = function()
+    if vim.bo.buftype == "" then
+      vim.cmd("silent! mkview")
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd("BufWinEnter", {
+  group = viewgrp,
+  pattern = "*",
+  callback = function()
+    if vim.bo.buftype == "" then
+      vim.cmd("silent! loadview")
+    end
+  end,
+})
