@@ -47,4 +47,4 @@ if not has_telescope then
 end
 
 -- Цветовая схема
-vim.cmd([[colorscheme slate]])
+vim.cmd([[colorscheme industry]])

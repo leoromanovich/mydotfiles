@@ -1,6 +1,12 @@
 -- Маппинги
 local keymap = vim.keymap.set
 local opts = { silent = true }
+local function render_markdown(command)
+  local ok = pcall(vim.cmd, ("RenderMarkdown %s"):format(command))
+  if not ok then
+    vim.notify("RenderMarkdown is unavailable for this buffer", vim.log.levels.WARN)
+  end
+end
 
 -- Навигация между окнами
 keymap("n", "<C-h>", "<C-w>h", opts)
@@ -42,6 +48,15 @@ vim.keymap.set("n", "<leader>rf", function()
   require("conform").format()
 end)
 
+vim.keymap.set("n", "<leader>me", function()
+  render_markdown("buf_enable")
+end, { desc = "Render Markdown enable" })
+vim.keymap.set("n", "<leader>md", function()
+  render_markdown("buf_disable")
+end, { desc = "Render Markdown disable" })
+vim.keymap.set("n", "<leader>mt", function()
+  render_markdown("buf_toggle")
+end, { desc = "Render Markdown toggle" })
 
 vim.keymap.set("n", "<leader>ld", function() vim.diagnostic.setloclist({ open = true }) end, { desc = "Diagnostics (buffer) → loclist" })
 vim.keymap.set("n", "<leader>qd", function() vim.diagnostic.setqflist({ open = true }) end, { desc = "Diagnostics (workspace) → quickfix" })
@@ -53,6 +68,5 @@ vim.keymap.set(
   [[:<C-U>'<,'>w !bash -eux -s<CR>]],
   { desc = "Run visual selection in bash (-eux)" }
 )
-
 
 
