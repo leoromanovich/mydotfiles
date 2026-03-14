@@ -1,0 +1,37 @@
+{
+  "suggest.noselect": true,
+  "suggest.enablePreselect": false,
+  "diagnostic.virtualText": true,
+  "diagnostic.checkCurrentLine": true,
+
+  "languageserver": {
+    "clangd": {
+      "command": "clangd",
+      "args": [
+        "--background-index",
+        "--header-insertion=never",
+        "--clang-tidy",
+        "--all-scopes-completion",
+        "--completion-style=detailed"
+      ],
+      "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"],
+      "rootPatterns": ["compile_commands.json", "compile_flags.txt", ".git"]
+    }
+  },
+
+  "pyright.inlayHints.variableTypes": false,
+  "pyright.inlayHints.functionReturnTypes": false,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic",
+
+  "coc.preferences.formatOnSave": false,
+
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--fast"],
+  "python.sortImports.path": "isort",
+
+  "lua.misc.parameters": ["--metapath", "~/.cache/lua-language-server/meta"],
+
+  "snippets.snipmate.enable": true,
+  "snippets.ultisnips.enable": false
+}
