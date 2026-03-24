@@ -13,18 +13,20 @@ let maplocalleader = ' '
 " Автоустановка vim-plug
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
-  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
+  echom '[dotfiles] Скачиваю vim-plug...'
+  execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
     \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  echom '[dotfiles] vim-plug установлен. Устанавливаю плагины...'
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
 call plug#begin('~/.vim/plugged')
 
 " --- LSP, Completion, Formatting, Linting (аналог lspconfig + mason + blink.cmp + conform + nvim-lint) ---
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': '!echo "[dotfiles] coc.nvim: npm install..." && npm install'}
 
 " --- Fuzzy finder (аналог telescope.nvim) ---
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf', { 'do': '!echo "[dotfiles] fzf: скачиваю бинарник..." && ./install --bin' }
 Plug 'junegunn/fzf.vim'
 
 " --- File explorer (аналог oil.nvim, улучшенный netrw) ---
