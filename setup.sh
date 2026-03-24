@@ -184,13 +184,29 @@ mkdir -p "$HOME/.vim/undodir"
 
 # Установка плагинов
 info "Устанавливаю vim-плагины (может занять время)..."
-vim +PlugInstall +qall 2>/dev/null || warn "Не удалось установить vim-плагины автоматически. Запустите vim и выполните :PlugInstall"
+vim -E -s +'PlugInstall --sync' +qall 2>&1 | while IFS= read -r line; do
+  # Показываем строки с прогрессом установки плагинов
+  case "$line" in
+    *Installing*|*Updated*|*Already*|*Error*|*Resolving*|*error*|*npm*)
+      echo "  $line" ;;
+  esac
+done
+# Проверяем, что plugged-директория не пустая
+if [ -d "$HOME/.vim/plugged" ] && [ "$(ls -A "$HOME/.vim/plugged" 2>/dev/null)" ]; then
+  ok "vim-плагины установлены ($(ls "$HOME/.vim/plugged" | wc -l | tr -d ' ') шт.)"
+else
+  warn "Не удалось установить vim-плагины автоматически. Запустите vim и выполните :PlugInstall"
+fi
 
 # Установка CoC extensions
 if command -v node &>/dev/null; then
   info "Устанавливаю CoC extensions..."
-  vim +'CocInstall -sync coc-pyright coc-clangd coc-snippets' +qall 2>/dev/null \
-    || warn "Не удалось установить CoC extensions. Запустите vim и выполните :CocInstall coc-pyright coc-clangd coc-snippets"
+  vim -E -s +'CocInstall -sync coc-pyright coc-clangd coc-snippets' +qall 2>&1 | while IFS= read -r line; do
+    case "$line" in
+      *Installing*|*installed*|*Updated*|*Error*|*error*)
+        echo "  $line" ;;
+    esac
+  done || warn "Не удалось установить CoC extensions. Запустите vim и выполните :CocInstall coc-pyright coc-clangd coc-snippets"
 else
   warn "Node.js не установлен — CoC extensions пропущены"
 fi
