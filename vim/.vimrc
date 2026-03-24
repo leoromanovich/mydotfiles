@@ -1,6 +1,7 @@
 " =====================================================================
 "  Vim config — аналог Neovim-конфига (nvim/)
-"  Требует: Vim 8.2+, Node.js (для CoC), fzf, ripgrep
+"  Требует: Vim 8.2+
+"  Рекомендуется: Node.js (для CoC/LSP), fzf, ripgrep
 " =====================================================================
 
 " --- Leader ---
@@ -10,24 +11,35 @@ let maplocalleader = ' '
 " =====================================================================
 "  vim-plug: менеджер плагинов (аналог lazy.nvim)
 " =====================================================================
-" Автоустановка vim-plug
+" Автоустановка vim-plug (если есть curl)
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
-  echom '[dotfiles] Скачиваю vim-plug...'
-  execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
-    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-  echom '[dotfiles] vim-plug установлен. Устанавливаю плагины...'
-  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+  if executable('curl')
+    echom '[dotfiles] Скачиваю vim-plug...'
+    execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
+      \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+    echom '[dotfiles] vim-plug установлен. Запустите :PlugInstall'
+    autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+  else
+    echom '[dotfiles] curl не найден — vim-plug не установлен. Плагины недоступны.'
+  endif
 endif
+
+" Загружаем плагины только если vim-plug установлен
+if !empty(glob(data_dir . '/autoload/plug.vim'))
 
 call plug#begin('~/.vim/plugged')
 
-" --- LSP, Completion, Formatting, Linting (аналог lspconfig + mason + blink.cmp + conform + nvim-lint) ---
-Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': '!echo "[dotfiles] coc.nvim: npm install..." && npm install'}
+" --- LSP, Completion, Formatting, Linting (требует Node.js) ---
+if executable('node')
+  Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': '!echo "[dotfiles] coc.nvim: npm install..." && npm install'}
+endif
 
 " --- Fuzzy finder (аналог telescope.nvim) ---
-Plug 'junegunn/fzf', { 'do': '!echo "[dotfiles] fzf: скачиваю бинарник..." && ./install --bin' }
-Plug 'junegunn/fzf.vim'
+if executable('fzf')
+  Plug 'junegunn/fzf', { 'do': '!echo "[dotfiles] fzf: скачиваю бинарник..." && ./install --bin' }
+  Plug 'junegunn/fzf.vim'
+endif
 
 " --- File explorer (аналог oil.nvim, улучшенный netrw) ---
 Plug 'tpope/vim-vinegar'
@@ -54,6 +66,8 @@ Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 
 call plug#end()
+
+endif " vim-plug installed
 
 " =====================================================================
 "  Опции (аналог config/options.lua)
@@ -188,7 +202,9 @@ endif
 
 " =====================================================================
 "  CoC.nvim (аналог lspconfig + mason + blink.cmp + conform + nvim-lint)
+"  Загружается только если Node.js установлен
 " =====================================================================
+if executable('node')
 
 " Подсказка при наведении (аналог K в lspconfig)
 nnoremap <silent> K :call CocActionAsync('doHover')<CR>
@@ -217,9 +233,14 @@ inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#next(1) : "\<Tab>"
 inoremap <silent><expr> <S-Tab> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
 inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
+endif " executable('node')
+
 " =====================================================================
 "  fzf.vim (аналог telescope.nvim)
+"  Загружается только если fzf установлен
 " =====================================================================
+if executable('fzf')
+
 let g:fzf_layout = { 'down': '~40%' }
 
 " Пикеры (аналог telescope keymaps)
@@ -230,10 +251,14 @@ nnoremap <silent> <leader>fh :Helptags<CR>
 nnoremap <silent> <leader>fr :History<CR>
 
 " Поиск всех файлов, включая .gitignore'd (аналог <leader>fa)
-command! -bang AllFiles call fzf#run(fzf#wrap({
-  \ 'source': 'rg --files --hidden --no-ignore --glob "!.git/"',
-  \ }, <bang>0))
-nnoremap <silent> <leader>fa :AllFiles<CR>
+if executable('rg')
+  command! -bang AllFiles call fzf#run(fzf#wrap({
+    \ 'source': 'rg --files --hidden --no-ignore --glob "!.git/"',
+    \ }, <bang>0))
+  nnoremap <silent> <leader>fa :AllFiles<CR>
+endif
+
+endif " executable('fzf')
 
 " =====================================================================
 "  vim-test (аналог tests.lua)
@@ -259,9 +284,10 @@ nmap <leader>dr <Plug>VimspectorRestart
 " =====================================================================
 "  Snippets (coc-snippets, аналог LuaSnip)
 " =====================================================================
-" Навигация по placeholder-ам сниппетов
-let g:coc_snippet_next = '<C-j>'
-let g:coc_snippet_prev = '<C-k>'
+if executable('node')
+  let g:coc_snippet_next = '<C-j>'
+  let g:coc_snippet_prev = '<C-k>'
+endif
 
 " =====================================================================
 "  netrw (file explorer, аналог oil.nvim)
