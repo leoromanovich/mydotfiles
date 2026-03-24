@@ -96,12 +96,11 @@ _opt_desc() {
     tmux) echo "терминальный мультиплексор" ;;
     rg)   echo "быстрый grep (ripgrep) для vim и bash" ;;
     fzf)  echo "fuzzy finder для vim и bash" ;;
-    node) echo "LSP в vim через CoC.nvim" ;;
   esac
 }
 
 OPTIONAL_MISSING=()
-for cmd in curl tmux rg fzf node; do
+for cmd in curl tmux rg fzf; do
   if command -v "$cmd" &>/dev/null; then
     ok "$cmd найден"
   else
@@ -133,9 +132,6 @@ backup_and_link "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
 mkdir -p "$HOME/.vim"
 backup_and_link "$DOTFILES_DIR/nvim/common.vim" "$HOME/.vim/common.vim"
 
-# coc-settings.json
-backup_and_link "$DOTFILES_DIR/vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
-
 # undodir
 mkdir -p "$HOME/.vim/undodir"
 
@@ -152,10 +148,6 @@ if command -v curl &>/dev/null; then
   info "Для установки плагинов запустите vim и выполните :PlugInstall"
 else
   warn "curl не найден — vim-plug не установлен. Плагины будут недоступны."
-fi
-
-if ! command -v node &>/dev/null; then
-  info "Node.js не найден — CoC (LSP) будет отключён в vim"
 fi
 
 # =====================================================================
@@ -230,7 +222,7 @@ echo -e "${GREEN}  Установка завершена!${NC}"
 echo -e "${GREEN}==============================================${NC}"
 echo ""
 echo "  Что настроено:"
-echo "    - Vim:  ~/.vimrc, ~/.vim/common.vim, ~/.vim/coc-settings.json"
+echo "    - Vim:  ~/.vimrc, ~/.vim/common.vim"
 if command -v tmux &>/dev/null; then
 echo "    - Tmux: ~/.tmux.conf + TPM"
 fi
@@ -240,11 +232,8 @@ echo ""
 echo "  Следующие шаги:"
 echo "    1. source ~/.bashrc          — применить bash-настройки"
 echo "    2. vim → :PlugInstall        — установить плагины"
-if command -v node &>/dev/null; then
-echo "    3. vim → :CocInstall coc-pyright coc-clangd coc-snippets"
-fi
 if command -v tmux &>/dev/null; then
-echo "    4. tmux → prefix + I         — установить tmux-плагины"
+echo "    3. tmux → prefix + I         — установить tmux-плагины"
 fi
 
 if [ ${#OPTIONAL_MISSING[@]} -gt 0 ]; then

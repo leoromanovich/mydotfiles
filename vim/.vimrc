@@ -1,7 +1,7 @@
 " =====================================================================
-"  Vim config — аналог Neovim-конфига (nvim/)
-"  Требует: Vim 8.2+
-"  Рекомендуется: Node.js (для CoC/LSP), fzf, ripgrep
+"  Vim config — лёгкий конфиг для серверов
+"  Работает на Vim 7.4+, без внешних зависимостей
+"  Для полноценной разработки (LSP, дебаг) — используй Neovim
 " =====================================================================
 
 " --- Leader ---
@@ -9,85 +9,51 @@ let mapleader = ' '
 let maplocalleader = ' '
 
 " =====================================================================
-"  vim-plug: менеджер плагинов (аналог lazy.nvim)
+"  vim-plug (опционально, если есть curl)
 " =====================================================================
-" Автоустановка vim-plug (если есть curl)
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
 if empty(glob(data_dir . '/autoload/plug.vim'))
   if executable('curl')
-    echom '[dotfiles] Скачиваю vim-plug...'
-    execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
+    silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
       \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-    echom '[dotfiles] vim-plug установлен. Запустите :PlugInstall'
     autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-  else
-    echom '[dotfiles] curl не найден — vim-plug не установлен. Плагины недоступны.'
   endif
 endif
 
-" Загружаем плагины только если vim-plug установлен
 if !empty(glob(data_dir . '/autoload/plug.vim'))
 
 call plug#begin('~/.vim/plugged')
 
-" --- LSP, Completion, Formatting, Linting (требует Node.js) ---
-if executable('node')
-  Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': 'npm install'}
-endif
-
-" --- Fuzzy finder (аналог telescope.nvim) ---
+" --- Fuzzy finder (если fzf установлен) ---
 if executable('fzf')
   Plug 'junegunn/fzf', { 'do': './install --bin' }
   Plug 'junegunn/fzf.vim'
 endif
 
-" --- File explorer (аналог oil.nvim, улучшенный netrw) ---
-Plug 'tpope/vim-vinegar'
-
-" --- Commenting (аналог Comment.nvim) ---
-Plug 'tpope/vim-commentary'
-
-" --- Auto pairs (аналог nvim-autopairs) ---
-Plug 'jiangmiao/auto-pairs'
-
-" --- Snippets (через coc-snippets, аналог LuaSnip) ---
-Plug 'honza/vim-snippets'
-
-" --- Testing (аналог vim-test — тот же плагин) ---
-Plug 'vim-test/vim-test'
-
-" --- Debugger (аналог nvim-dap) ---
-Plug 'puremourning/vimspector'
-
-" --- Surround ---
-Plug 'tpope/vim-surround'
-
-" --- Repeat (поддержка . для плагинов) ---
-Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-vinegar'       " улучшенный netrw
+Plug 'tpope/vim-commentary'    " gcc для комментирования
+Plug 'tpope/vim-surround'      " cs'" для замены кавычек
+Plug 'tpope/vim-repeat'        " . для плагинов
 
 call plug#end()
 
 endif " vim-plug installed
 
 " =====================================================================
-"  Опции (аналог config/options.lua)
+"  Опции
 " =====================================================================
 set nocompatible
-set termguicolors
 set mouse=a
 set number
 set nobackup
 set nowritebackup
 set noswapfile
-set cmdheight=1
-set completeopt=menuone,noselect
-set conceallevel=0
 set encoding=utf-8
 set fileencoding=utf-8
 set hlsearch
+set incsearch
 set ignorecase
 set smartcase
-set pumheight=10
 set showmode
 set showtabline=0
 set smartindent
@@ -102,29 +68,36 @@ set shiftwidth=4
 set tabstop=4
 set cursorline
 set laststatus=2
-set noshowcmd
-set noruler
 set numberwidth=4
 set nowrap
 set scrolloff=8
 set sidescrolloff=8
-set signcolumn=yes
 set hidden
-set shortmess+=c
+set backspace=indent,eol,start
+set wildmenu
+set wildmode=longest:full,full
+
+" termguicolors только если терминал поддерживает
+if has('termguicolors') && $TERM !~# '^\(linux\|screen\)$'
+  set termguicolors
+endif
+
+" signcolumn если поддерживается
+if exists('+signcolumn')
+  set signcolumn=yes
+endif
 
 " --- Folding ---
-set foldcolumn=1
 set foldlevel=99
 set foldlevelstart=99
 set foldenable
 set foldmethod=indent
-set viewoptions=folds,cursor
 
 " --- Colorscheme ---
 colorscheme industry
 
 " =====================================================================
-"  Keymaps (аналог config/keymaps.lua)
+"  Keymaps
 " =====================================================================
 
 " Навигация между окнами
@@ -153,7 +126,7 @@ vnoremap <silent> <leader>rmd :RmDebugLines<CR>
 vnoremap <leader>xb :<C-U>'<,'>w !bash -eux -s<CR>
 
 " =====================================================================
-"  Autocmds (аналог config/autocmd.lua)
+"  Autocmds
 " =====================================================================
 
 " --- pytest + :make из корня проекта ---
@@ -182,8 +155,8 @@ augroup END
 " --- Quickfix: n/p для навигации ---
 augroup quickfix_nav
   autocmd!
-  autocmd FileType qf nnoremap <buffer> <silent> n <Cmd>cnext<CR><C-w>p
-  autocmd FileType qf nnoremap <buffer> <silent> p <Cmd>cprev<CR><C-w>p
+  autocmd FileType qf nnoremap <buffer> <silent> n :cnext<CR><C-w>p
+  autocmd FileType qf nnoremap <buffer> <silent> p :cprev<CR><C-w>p
 augroup END
 
 " --- Запоминание fold-ов ---
@@ -194,103 +167,33 @@ augroup remember_folds
 augroup END
 
 " =====================================================================
-"  common.vim (пикеры без плагинов, quickfix)
+"  common.vim (пикеры без плагинов)
 " =====================================================================
 if filereadable(expand('~/.vim/common.vim'))
   source ~/.vim/common.vim
 endif
 
 " =====================================================================
-"  CoC.nvim (аналог lspconfig + mason + blink.cmp + conform + nvim-lint)
-"  Загружается только если Node.js установлен
-" =====================================================================
-if executable('node')
-
-" Подсказка при наведении (аналог K в lspconfig)
-nnoremap <silent> K :call CocActionAsync('doHover')<CR>
-
-" LSP-навигация (аналог keymaps из lsp.lua)
-nmap <silent> gd <Plug>(coc-definition)
-nmap <silent> gD <Plug>(coc-declaration)
-nmap <silent> gi <Plug>(coc-implementation)
-nmap <silent> go <Plug>(coc-type-definition)
-nmap <silent> gr <Plug>(coc-references)
-nmap <silent> gs :call CocActionAsync('showSignatureHelp')<CR>
-nmap <silent> <F2> <Plug>(coc-rename)
-nmap <silent> <F3> :call CocActionAsync('format')<CR>
-nmap <silent> <F4> <Plug>(coc-codeaction-cursor)
-
-" Диагностика (аналог <leader>d)
-nmap <silent> <leader>d :CocDiagnostics<CR>
-nmap <silent> [d <Plug>(coc-diagnostic-prev)
-nmap <silent> ]d <Plug>(coc-diagnostic-next)
-
-" Форматирование (аналог <leader>rf)
-nnoremap <silent> <leader>rf :call CocActionAsync('format')<CR>
-
-" Tab/S-Tab для навигации в completion меню
-inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#next(1) : "\<Tab>"
-inoremap <silent><expr> <S-Tab> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
-inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
-
-endif " executable('node')
-
-" =====================================================================
-"  fzf.vim (аналог telescope.nvim)
-"  Загружается только если fzf установлен
+"  fzf.vim (если установлен)
 " =====================================================================
 if executable('fzf')
+  let g:fzf_layout = { 'down': '~40%' }
+  nnoremap <silent> <leader>ff :Files<CR>
+  nnoremap <silent> <leader>fg :Rg<CR>
+  nnoremap <silent> <leader>fb :Buffers<CR>
+  nnoremap <silent> <leader>fh :Helptags<CR>
+  nnoremap <silent> <leader>fr :History<CR>
 
-let g:fzf_layout = { 'down': '~40%' }
-
-" Пикеры (аналог telescope keymaps)
-nnoremap <silent> <leader>ff :Files<CR>
-nnoremap <silent> <leader>fg :Rg<CR>
-nnoremap <silent> <leader>fb :Buffers<CR>
-nnoremap <silent> <leader>fh :Helptags<CR>
-nnoremap <silent> <leader>fr :History<CR>
-
-" Поиск всех файлов, включая .gitignore'd (аналог <leader>fa)
-if executable('rg')
-  command! -bang AllFiles call fzf#run(fzf#wrap({
-    \ 'source': 'rg --files --hidden --no-ignore --glob "!.git/"',
-    \ }, <bang>0))
-  nnoremap <silent> <leader>fa :AllFiles<CR>
-endif
-
-endif " executable('fzf')
-
-" =====================================================================
-"  vim-test (аналог tests.lua)
-" =====================================================================
-let test#strategy = 'vimterminal'
-let test#python#runner = 'pytest'
-
-nnoremap <silent> <leader>tn :TestNearest<CR>
-nnoremap <silent> <leader>tf :TestFile<CR>
-nnoremap <silent> <leader>ts :TestSuite<CR>
-nnoremap <silent> <leader>tv :TestVisit<CR>
-
-" =====================================================================
-"  Vimspector (аналог nvim-dap)
-" =====================================================================
-let g:vimspector_enable_mappings = 'HUMAN'
-
-nmap <leader>b <Plug>VimspectorToggleBreakpoint
-nmap <leader>B <Plug>VimspectorToggleConditionalBreakpoint
-nmap <leader>dt <Plug>VimspectorStop
-nmap <leader>dr <Plug>VimspectorRestart
-
-" =====================================================================
-"  Snippets (coc-snippets, аналог LuaSnip)
-" =====================================================================
-if executable('node')
-  let g:coc_snippet_next = '<C-j>'
-  let g:coc_snippet_prev = '<C-k>'
+  if executable('rg')
+    command! -bang AllFiles call fzf#run(fzf#wrap({
+      \ 'source': 'rg --files --hidden --no-ignore --glob "!.git/"',
+      \ }, <bang>0))
+    nnoremap <silent> <leader>fa :AllFiles<CR>
+  endif
 endif
 
 " =====================================================================
-"  netrw (file explorer, аналог oil.nvim)
+"  netrw (file explorer)
 " =====================================================================
 let g:netrw_banner = 0
 let g:netrw_liststyle = 3
