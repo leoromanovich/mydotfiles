@@ -32,12 +32,12 @@ call plug#begin('~/.vim/plugged')
 
 " --- LSP, Completion, Formatting, Linting (требует Node.js) ---
 if executable('node')
-  Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': '!echo "[dotfiles] coc.nvim: npm install..." && npm install'}
+  Plug 'neoclide/coc.nvim', {'branch': 'release', 'do': 'npm install'}
 endif
 
 " --- Fuzzy finder (аналог telescope.nvim) ---
 if executable('fzf')
-  Plug 'junegunn/fzf', { 'do': '!echo "[dotfiles] fzf: скачиваю бинарник..." && ./install --bin' }
+  Plug 'junegunn/fzf', { 'do': './install --bin' }
   Plug 'junegunn/fzf.vim'
 endif
 

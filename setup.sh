@@ -90,20 +90,22 @@ for cmd in vim git; do
 done
 
 # Рекомендуемые: без них всё работает, но с ограничениями
-declare -A OPTIONAL_DESC=(
-  [curl]="скачивание vim-plug"
-  [tmux]="терминальный мультиплексор"
-  [rg]="быстрый grep (ripgrep) для vim и bash"
-  [fzf]="fuzzy finder для vim и bash"
-  [node]="LSP в vim через CoC.nvim"
-)
+_opt_desc() {
+  case "$1" in
+    curl) echo "скачивание vim-plug" ;;
+    tmux) echo "терминальный мультиплексор" ;;
+    rg)   echo "быстрый grep (ripgrep) для vim и bash" ;;
+    fzf)  echo "fuzzy finder для vim и bash" ;;
+    node) echo "LSP в vim через CoC.nvim" ;;
+  esac
+}
 
 OPTIONAL_MISSING=()
 for cmd in curl tmux rg fzf node; do
   if command -v "$cmd" &>/dev/null; then
     ok "$cmd найден"
   else
-    warn "$cmd не найден — ${OPTIONAL_DESC[$cmd]}"
+    warn "$cmd не найден — $(_opt_desc "$cmd")"
     OPTIONAL_MISSING+=("$cmd")
   fi
 done
