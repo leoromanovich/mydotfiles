@@ -27,6 +27,10 @@ alias gp='git push'
 alias gpu='git pull'
 alias glg='git log --pretty=format:"%h %an | %s" --graph'
 
+# Git worktree
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
+[ -f "$DOTFILES_DIR/git-worktree.sh" ] && source "$DOTFILES_DIR/git-worktree.sh"
+
 # Vim / Tmux
 alias v='vim'
 alias ta='tmux attach -t'
