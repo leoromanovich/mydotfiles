@@ -18,7 +18,7 @@ _wt_root() {
         return 1
     fi
     # Worktrees live next to .git/, so return parent
-    echo "${gitdir:h}"
+    echo "$(dirname "$gitdir")"
 }
 
 # wt add <branch> [base] — create new branch worktree (like git switch -c)
@@ -66,7 +66,11 @@ wt-rm() {
     git -C "$root" worktree remove "$root/$branch" $force || return 1
 
     echo "Removed worktree: $branch"
-    read "yn?Delete branch '$branch' too? (y/N): "
+    if [ -n "$ZSH_VERSION" ]; then
+        read "yn?Delete branch '$branch' too? (y/N): "
+    else
+        read -p "Delete branch '$branch' too? (y/N): " yn
+    fi
     if [[ "$yn" =~ ^[Yy]$ ]]; then
         git -C "$root" branch -D "$branch" 2>/dev/null
         echo "Deleted branch: $branch"
