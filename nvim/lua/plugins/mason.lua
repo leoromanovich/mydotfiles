@@ -11,7 +11,7 @@ return {
     dependencies = { "williamboman/mason.nvim", "mfussenegger/nvim-dap" },
     config = function()
       require("mason-nvim-dap").setup({
-        ensure_installed = { "cpptools" }, -- поставит OpenDebugAD7
+        ensure_installed = { "cpptools", "codelldb" },
         automatic_setup = true,
       })
     end,

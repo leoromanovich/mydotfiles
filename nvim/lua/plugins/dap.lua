@@ -35,6 +35,27 @@ return {
         return "python"
       end
 
+      local function prompt_for_executable()
+        local cwd = (vim.uv or vim.loop).cwd()
+        local current_file = vim.api.nvim_buf_get_name(0)
+        local default_name = current_file ~= "" and vim.fn.fnamemodify(current_file, ":t:r") or ""
+        local candidates = {
+          join(cwd, default_name),
+          join(join(cwd, "build"), default_name),
+          join(join(cwd, "bin"), default_name),
+        }
+        local default_path = cwd .. "/"
+
+        for _, candidate in ipairs(candidates) do
+          if default_name ~= "" and vim.fn.filereadable(candidate) == 1 then
+            default_path = candidate
+            break
+          end
+        end
+
+        return vim.fn.input("Path to executable: ", default_path, "file")
+      end
+
       dap.set_exception_breakpoints({ "raised", "uncaught" })
       local cache = vim.fn.stdpath("cache")
       vim.fn.mkdir(cache .. "/debugpy", "p")
@@ -64,7 +85,17 @@ return {
           -- console = "integratedTerminal", -- альтернатива: открыть отдельный терминал
           showReturnValue = true,
         },
-      } -- CUDA DAP через cpptools + cuda-gdb
+      }
+
+      dap.adapters.codelldb = {
+        type = "server",
+        port = "${port}",
+        executable = {
+          command = vim.fn.stdpath("data") .. "/mason/bin/codelldb",
+          args = { "--port", "${port}" },
+        },
+      }
+
       dap.adapters.cppdbg = {
         id = "cppdbg",
         type = "executable",
@@ -78,12 +109,29 @@ return {
 
       dap.configurations.cpp = {
         {
+          name = "Launch executable",
+          type = "codelldb",
+          request = "launch",
+          program = prompt_for_executable,
+          cwd = "${workspaceFolder}",
+          stopOnEntry = false,
+        },
+        {
+          name = "Attach to process",
+          type = "codelldb",
+          request = "attach",
+          pid = require("dap.utils").pick_process,
+          cwd = "${workspaceFolder}",
+        },
+      }
+      dap.configurations.c = dap.configurations.cpp
+
+      dap.configurations.cuda = {
+        {
           name = "Launch (cuda-gdb)",
           type = "cppdbg",
           request = "launch",
-          program = function()
-            return vim.fn.input("Path to exe: ", vim.loop.cwd() .. "/", "file")
-          end,
+          program = prompt_for_executable,
           cwd = "${workspaceFolder}",
           stopAtEntry = false,
           MIMode = "gdb",
@@ -97,7 +145,6 @@ return {
           },
         },
       }
-      dap.configurations.cuda = dap.configurations.cpp
 
       -- Маппинги для nvim-dap
       vim.keymap.set("n", "<F5>", function()
